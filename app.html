@@ -823,7 +823,8 @@ function enterApp(user) {
   appEl.style.display = 'block';
   window.scrollTo(0, 0);
   document.getElementById('nav-right').innerHTML = `
-    <span class="user-email">${user.email}</span>
+    <span class="user-email" style="margin-right:12px">${user.email}</span>
+    <button class="nav-btn" onclick="handleLogout()" style="background:#1a3a5c;font-size:0.8rem;padding:8px 16px">Log Out</button>
   `;
   if (loans.length === 0) addLoan();
 }
@@ -1091,6 +1092,23 @@ function generateFallbackAdvice(loans, avalanche, snowball) {
   const betterMethod = avalanche.totalInterest <= snowball.totalInterest ? 'Avalanche' : 'Snowball';
 
   return `The <strong>${betterMethod} method</strong> is your best bet — it saves you $${saving.toFixed(0)} in interest. Start by attacking your <strong>${highestRate?.name}</strong> (${highestRate?.rate}% APR) — this is costing you the most money every month. Stay consistent with your minimum payments on everything else. You're ${avalanche.months} months away from being completely debt free. You can do this! 💪`;
+}
+
+// ── LOGOUT ──────────────────────────────────────────────────────
+async function handleLogout() {
+  if (supabaseClient) await supabaseClient.auth.signOut();
+  currentUser = null;
+  loans = [];
+  loanId = 0;
+  document.getElementById('loans-container').innerHTML = '';
+  document.getElementById('results').style.display = 'none';
+  const appEl = document.getElementById('app-screen');
+  const authEl = document.getElementById('auth-screen');
+  appEl.classList.remove('active');
+  appEl.style.display = 'none';
+  authEl.classList.add('active');
+  authEl.style.display = '';
+  document.getElementById('nav-right').innerHTML = `<button class="nav-btn" onclick="showAuth()">Sign In</button>`;
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
