@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PaidOffAI — Your AI Loan Payoff Planner</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
   <style>
     :root {
       --blue: #185FA5;
@@ -736,9 +736,11 @@ let loans = [];
 let currentStrategy = 'avalanche';
 
 try {
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const _supabase = window.supabase || supabase;
+  supabaseClient = _supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('Supabase connected');
 } catch(e) {
-  console.log('Supabase not configured yet');
+  console.log('Supabase error:', e);
 }
 
 // ── AUTH ────────────────────────────────────────────────────────
@@ -766,7 +768,7 @@ async function handleLogin() {
   const password = document.getElementById('login-password').value;
   if (!email || !password) return showMsg('Please fill in all fields', 'error');
 
-  if (!supabaseClient || SUPABASE_URL === 'https://dwnbyqqcqiaxnibotzwd.supabase.co') {
+  if (!supabaseClient || SUPABASE_URL === 'YOUR_SUPABASE_URL') {
     // DEMO MODE — skip auth
     enterApp({ email });
     return;
@@ -780,7 +782,7 @@ async function handleLogin() {
   btn.disabled = false;
   btn.textContent = 'Sign In →';
 
-  if (error) return showMsg(error.message || "Signup failed. Try again.", "error");
+  if (error) return showMsg(error.message, 'error');
   enterApp(data.user);
 }
 
@@ -790,7 +792,7 @@ async function handleSignup() {
   if (!email || !password) return showMsg('Please fill in all fields', 'error');
   if (password.length < 6) return showMsg('Password must be at least 6 characters', 'error');
 
-  if (!supabaseClient || SUPABASE_URL === 'https://dwnbyqqcqiaxnibotzwd.supabase.co') {
+  if (!supabaseClient || SUPABASE_URL === 'YOUR_SUPABASE_URL') {
     enterApp({ email });
     return;
   }
@@ -803,8 +805,12 @@ async function handleSignup() {
   btn.disabled = false;
   btn.textContent = 'Create Free Account →';
 
-  if (error) return showMsg(error.message || "Signup failed. Try again.", "error");
-  showMsg('Check your email to confirm your account!', 'success');
+  if (error) return showMsg(error.message || 'Signup failed', 'error');
+  if (data?.user) {
+    enterApp(data.user);
+  } else {
+    showMsg('Check your email to confirm!', 'success');
+  }
 }
 
 function enterApp(user) {
@@ -1084,7 +1090,7 @@ function generateFallbackAdvice(loans, avalanche, snowball) {
 
 // ── INIT ─────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
-  if (supabaseClient && SUPABASE_URL !== 'https://dwnbyqqcqiaxnibotzwd.supabase.co') {
+  if (supabaseClient && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session?.user) enterApp(session.user);
   }
