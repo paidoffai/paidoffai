@@ -69,12 +69,12 @@
     .nav-btn:hover { background: var(--blue-light); }
 
     /* ── SCREENS ── */
-    .screen { display: none; }
-    .screen.active { display: block; }
+    .screen { display: none !important; }
+    .screen.active { display: block !important; }
 
     /* ── AUTH SCREEN ── */
-    #auth-screen {
-      display: flex;
+    #auth-screen.active {
+      display: flex !important;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
@@ -815,9 +815,13 @@ async function handleSignup() {
 
 function enterApp(user) {
   currentUser = user;
-  document.getElementById('auth-screen').classList.remove('active');
-  document.getElementById('app-screen').classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const authEl = document.getElementById('auth-screen');
+  const appEl = document.getElementById('app-screen');
+  authEl.classList.remove('active');
+  authEl.style.display = 'none';
+  appEl.classList.add('active');
+  appEl.style.display = 'block';
+  window.scrollTo(0, 0);
   document.getElementById('nav-right').innerHTML = `
     <span class="user-email">${user.email}</span>
   `;
