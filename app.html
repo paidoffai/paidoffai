@@ -817,6 +817,7 @@ function enterApp(user) {
   currentUser = user;
   document.getElementById('auth-screen').classList.remove('active');
   document.getElementById('app-screen').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   document.getElementById('nav-right').innerHTML = `
     <span class="user-email">${user.email}</span>
   `;
