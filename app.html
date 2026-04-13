@@ -780,7 +780,7 @@ async function handleLogin() {
   btn.disabled = false;
   btn.textContent = 'Sign In →';
 
-  if (error) return showMsg(error.message, 'error');
+  if (error) return showMsg(error.message || "Signup failed. Try again.", "error");
   enterApp(data.user);
 }
 
@@ -803,7 +803,7 @@ async function handleSignup() {
   btn.disabled = false;
   btn.textContent = 'Create Free Account →';
 
-  if (error) return showMsg(error.message, 'error');
+  if (error) return showMsg(error.message || "Signup failed. Try again.", "error");
   showMsg('Check your email to confirm your account!', 'success');
 }
 
