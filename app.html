@@ -381,7 +381,8 @@ let user = null;
 let loans = [];
 let loanId = 0;
 let strategy = 'avalanche';
-let resAv = null, resSn = null;
+window.resAv = null;
+window.resSn = null;
 let loansData = [];
 let extra = 0;
 
@@ -606,21 +607,34 @@ function generatePlan() {
   loansData = getLoansData();
   if (!loansData.length) { alert('Add at least one loan with a balance.'); return; }
   extra = parseFloat(document.getElementById('extra-payment').value) || 0;
-  resAv = calc(loansData, extra, 'avalanche');
-  resSn = calc(loansData, extra, 'snowball');
+
+  // Calculate both strategies
+  window.resAv = calc(loansData, extra, 'avalanche');
+  window.resSn = calc(loansData, extra, 'snowball');
+
+  console.log('Avalanche:', window.resAv.months, 'months');
+  console.log('Snowball:', window.resSn.months, 'months');
+
+  // Default to avalanche
   strategy = 'avalanche';
   document.getElementById('btn-av').classList.add('on');
   document.getElementById('btn-sn').classList.remove('on');
-  displayResults(resAv);
-  getAI(loansData, resAv, resSn);
+  displayResults(window.resAv);
+  getAI(loansData, window.resAv, window.resSn);
 }
 
 function switchStrat(s) {
   strategy = s;
   document.getElementById('btn-av').classList.toggle('on', s === 'avalanche');
   document.getElementById('btn-sn').classList.toggle('on', s === 'snowball');
-  if (!resAv || !resSn) return;
-  displayResults(s === 'avalanche' ? resAv : resSn);
+  
+  console.log('Switching to:', s, 'resAv:', !!window.resAv, 'resSn:', !!window.resSn);
+  
+  if (s === 'avalanche' && window.resAv) {
+    displayResults(window.resAv);
+  } else if (s === 'snowball' && window.resSn) {
+    displayResults(window.resSn);
+  }
 }
 
 function resetAll() {
