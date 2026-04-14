@@ -619,7 +619,7 @@ function switchStrat(s) {
   strategy = s;
   document.getElementById('btn-av').classList.toggle('on', s === 'avalanche');
   document.getElementById('btn-sn').classList.toggle('on', s === 'snowball');
-  if (!resAv || !resSn) { alert('Generate your plan first!'); return; }
+  if (!resAv || !resSn) return;
   displayResults(s === 'avalanche' ? resAv : resSn);
 }
 
