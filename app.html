@@ -347,8 +347,8 @@ body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#e2e2e2;min-height:
 
           <div class="sec-lbl">Strategy</div>
           <div class="strat-btns">
-            <button class="strat-btn on" id="btn-av" onclick="switchStrat('avalanche',this)">🏔 Avalanche</button>
-            <button class="strat-btn" id="btn-sn" onclick="switchStrat('snowball',this)">⛄ Snowball</button>
+            <button class="strat-btn on" id="btn-av" onclick="switchStrat('avalanche')">🏔 Avalanche</button>
+            <button class="strat-btn" id="btn-sn" onclick="switchStrat('snowball')">⛄ Snowball</button>
           </div>
 
           <div class="sec-lbl">AI analysis</div>
@@ -615,19 +615,12 @@ function generatePlan() {
   getAI(loansData, resAv, resSn);
 }
 
-function switchStrat(s, btn) {
+function switchStrat(s) {
   strategy = s;
-  document.getElementById('btn-av').classList.remove('on');
-  document.getElementById('btn-sn').classList.remove('on');
-  if (s === 'avalanche') {
-    document.getElementById('btn-av').classList.add('on');
-    if (resAv) { displayResults(resAv); }
-    else { alert('Please generate your plan first!'); }
-  } else {
-    document.getElementById('btn-sn').classList.add('on');
-    if (resSn) { displayResults(resSn); }
-    else { alert('Please generate your plan first!'); }
-  }
+  document.getElementById('btn-av').classList.toggle('on', s === 'avalanche');
+  document.getElementById('btn-sn').classList.toggle('on', s === 'snowball');
+  if (!resAv || !resSn) { alert('Generate your plan first!'); return; }
+  displayResults(s === 'avalanche' ? resAv : resSn);
 }
 
 function resetAll() {
