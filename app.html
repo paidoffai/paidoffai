@@ -592,33 +592,9 @@ function fallback(loans, av, sn) {
 // ── STRIPE ──
 async function handleUpgrade() {
   if (!currentUser) { alert('Please sign in first'); return; }
-  
-  try {
-    if (!stripe) stripe = Stripe(STRIPE_PK);
-    
-    // Create checkout session via Supabase Edge Function (fallback: direct Stripe)
-    // For now use Stripe Payment Link approach
-    const btn = event?.target;
-    if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
-    
-    // Create a simple checkout
-    const { error } = await stripe.redirectToCheckout({
-      lineItems: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
-      mode: 'subscription',
-      successUrl: window.location.origin + '/app?success=true',
-      cancelUrl: window.location.origin + '/app?canceled=true',
-      customerEmail: currentUser.email,
-    });
-    
-    if (error) {
-      alert('Payment error: ' + error.message);
-      if (btn) { btn.textContent = 'Upgrade $19/mo'; btn.disabled = false; }
-    }
-  } catch(e) {
-    console.log('Stripe error:', e);
-    // Fallback — open Stripe checkout link
-    window.open('https://buy.stripe.com/test_' + STRIPE_PRICE_ID, '_blank');
-  }
+  // Redirect to Stripe payment link with prefilled email
+  const email = encodeURIComponent(currentUser.email);
+  window.location.href = `https://buy.stripe.com/test_00w28t7NJd3l918gSJdUY00?prefilled_email=${email}`;
 }
 
 function checkProStatus() {
