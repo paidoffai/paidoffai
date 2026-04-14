@@ -6,6 +6,7 @@
 <title>PaidOffAI — AI Loan Payoff Planner</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -167,6 +168,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .two-col{grid-template-columns:1fr;}
   .stats-row{grid-template-columns:1fr 1fr;}
 }
+
+/* ── PRO BADGE & UPGRADE ── */
+.pro-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;}
+.upgrade-banner{background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(99,102,241,0.15));border:1px solid rgba(59,130,246,0.3);border-radius:10px;padding:16px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.upgrade-text{font-size:13px;color:var(--text2);flex:1;}
+.upgrade-text strong{color:var(--text);}
+.btn-upgrade{padding:8px 16px;background:var(--blue);border:none;border-radius:7px;color:white;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;}
+.btn-upgrade:hover{opacity:0.85;}
+.pro-lock{opacity:0.4;pointer-events:none;position:relative;}
+.pro-lock::after{content:'🔒 Pro';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--border);padding:6px 14px;border-radius:8px;font-size:12px;color:var(--text2);pointer-events:none;}
 </style>
 </head>
 <body>
@@ -217,6 +228,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         Reports
       </div>
     </nav>
+      <div class="nav-item" id="pro-nav" onclick="handleUpgrade()" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(239,68,68,0.15));border:1px solid rgba(245,158,11,0.3);margin-top:8px;">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 4 4.5.5-3.25 3.25.75 4.5L8 11 4 13.25l.75-4.5L1.5 5.5 6 5z"/></svg>
+        <span style="color:#f59e0b;font-weight:600;">Upgrade to Pro</span>
+      </div>
+    </div>
     <div class="sidebar-footer">
       <div class="user-info">
         <div class="user-avatar" id="user-initials">?</div>
@@ -263,6 +279,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
         <!-- Right -->
         <div class="right-panel">
+          <div id="upgrade-banner" class="upgrade-banner" style="display:none;">
+            <div class="upgrade-text"><strong>Unlock Pro features</strong><br/>Save plans, track progress, get full AI analysis</div>
+            <button class="btn-upgrade" onclick="handleUpgrade()">Upgrade $19/mo</button>
+          </div>
           <div class="section-head">Strategy</div>
           <div class="strategy-row" style="margin-bottom:20px;">
             <button class="strat-btn active" onclick="switchStrategy('avalanche',this)">🏔 Avalanche</button>
@@ -294,7 +314,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 const SUPABASE_URL = 'https://dwnbyqqcqiaxnibotzwd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3bmJ5cXFjcWlheG5pYm90endkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5OTc0ODAsImV4cCI6MjA5MTU3MzQ4MH0.QEGpZbw_GyiH9wYpWUjUG64k7GJGIVIrTo1_i4Kqszo';
 
+const STRIPE_PK = 'pk_test_51TLNFePuOg9tzs7n3x173PRTL1cz18CFxrl5XSGdWGDybaVkPXowzLxt2nEz0EixTk3vxWMxrpUkxuwAVyrF0HDh00nRZWJ85L';
+const STRIPE_PRICE_ID = 'price_1TM8SdPuOg9tzs7nKLWAwxKT';
+let stripe = null;
 let sb = null;
+let isPro = false;
 let currentUser = null;
 let loans = [];
 let loanId = 0;
@@ -356,6 +380,7 @@ function enterApp(user) {
   document.getElementById('user-initials').textContent = initials;
   document.getElementById('user-email-display').textContent = user.email || '';
   if (loans.length === 0) addLoan();
+  checkProStatus();
 }
 
 async function handleLogout() {
@@ -419,46 +444,65 @@ function getLoansData() {
 // ── CALC ──
 function calcPayoff(loansData, extra, strategy) {
   let sorted = [...loansData].sort((a,b) => strategy === 'avalanche' ? b.rate - a.rate : a.balance - b.balance);
-  let bals = sorted.map(l => ({...l, remaining: l.balance}));
+  let bals = sorted.map(l => ({...l, remaining: l.balance, paid: false}));
   let totalMin = bals.reduce((s,l) => s + l.minPayment, 0);
   let budget = totalMin + (parseFloat(extra) || 0);
   let totalInterest = 0, month = 0;
   let payoffDates = {};
 
-  while (bals.some(l => l.remaining > 0) && month < 600) {
+  while (bals.some(l => !l.paid) && month < 600) {
     month++;
-    let extra2 = budget - totalMin;
+
+    // Step 1: apply interest and min payments to all unpaid loans
+    let freed = 0;
     for (let i = 0; i < bals.length; i++) {
-      if (bals[i].remaining <= 0) continue;
+      if (bals[i].paid) continue;
       const interest = (bals[i].remaining * (bals[i].rate / 100)) / 12;
       totalInterest += interest;
-      bals[i].remaining += interest - bals[i].minPayment;
+      bals[i].remaining += interest;
+      bals[i].remaining -= bals[i].minPayment;
       if (bals[i].remaining <= 0) {
-        extra2 += Math.abs(bals[i].remaining);
+        freed += Math.abs(bals[i].remaining);
         bals[i].remaining = 0;
+        bals[i].paid = true;
         if (!payoffDates[bals[i].id]) {
           const d = new Date(); d.setMonth(d.getMonth() + month);
           payoffDates[bals[i].id] = d.toLocaleDateString('en-US', {month:'short', year:'numeric'});
-          totalMin -= bals[i].minPayment;
         }
       }
     }
+
+    // Step 2: apply extra payment + freed money to first unpaid loan (in sorted order)
+    let extraPool = (budget - totalMin) + freed;
     for (let i = 0; i < bals.length; i++) {
-      if (bals[i].remaining > 0) {
-        bals[i].remaining -= extra2;
-        if (bals[i].remaining <= 0) {
-          extra2 = Math.abs(bals[i].remaining); bals[i].remaining = 0;
-          if (!payoffDates[bals[i].id]) {
-            const d = new Date(); d.setMonth(d.getMonth() + month);
-            payoffDates[bals[i].id] = d.toLocaleDateString('en-US', {month:'short', year:'numeric'});
-            totalMin -= bals[i].minPayment;
-          }
-        } else break;
+      if (bals[i].paid || bals[i].remaining <= 0) continue;
+      bals[i].remaining -= extraPool;
+      if (bals[i].remaining <= 0) {
+        extraPool = Math.abs(bals[i].remaining);
+        bals[i].remaining = 0;
+        bals[i].paid = true;
+        if (!payoffDates[bals[i].id]) {
+          const d = new Date(); d.setMonth(d.getMonth() + month);
+          payoffDates[bals[i].id] = d.toLocaleDateString('en-US', {month:'short', year:'numeric'});
+        }
+      } else {
+        break;
       }
     }
+
+    // Recalculate totalMin based on remaining unpaid loans
+    totalMin = bals.filter(l => !l.paid).reduce((s,l) => s + l.minPayment, 0);
   }
+
   const df = new Date(); df.setMonth(df.getMonth() + month);
-  return { months: month, debtFreeDate: df.toLocaleDateString('en-US',{month:'long',year:'numeric'}), totalInterest, monthlyPayment: budget, order: sorted, payoffDates };
+  return {
+    months: month,
+    debtFreeDate: df.toLocaleDateString('en-US', {month:'long', year:'numeric'}),
+    totalInterest,
+    monthlyPayment: budget,
+    order: sorted,
+    payoffDates
+  };
 }
 
 function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
@@ -543,6 +587,61 @@ function fallback(loans, av, sn) {
   const better = av.totalInterest <= sn.totalInterest ? 'Avalanche' : 'Snowball';
   const saving = Math.abs(av.totalInterest - sn.totalInterest);
   return `The <strong>${better} method</strong> saves you $${Math.round(saving).toLocaleString()} in interest. Focus on <strong>${high?.name}</strong> first — at ${high?.rate}% it's costing you the most. You'll be debt-free in ${av.months} months. Keep going! 💪`;
+}
+
+// ── STRIPE ──
+async function handleUpgrade() {
+  if (!currentUser) { alert('Please sign in first'); return; }
+  
+  try {
+    if (!stripe) stripe = Stripe(STRIPE_PK);
+    
+    // Create checkout session via Supabase Edge Function (fallback: direct Stripe)
+    // For now use Stripe Payment Link approach
+    const btn = event?.target;
+    if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
+    
+    // Create a simple checkout
+    const { error } = await stripe.redirectToCheckout({
+      lineItems: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+      mode: 'subscription',
+      successUrl: window.location.origin + '/app?success=true',
+      cancelUrl: window.location.origin + '/app?canceled=true',
+      customerEmail: currentUser.email,
+    });
+    
+    if (error) {
+      alert('Payment error: ' + error.message);
+      if (btn) { btn.textContent = 'Upgrade $19/mo'; btn.disabled = false; }
+    }
+  } catch(e) {
+    console.log('Stripe error:', e);
+    // Fallback — open Stripe checkout link
+    window.open('https://buy.stripe.com/test_' + STRIPE_PRICE_ID, '_blank');
+  }
+}
+
+function checkProStatus() {
+  // Check URL for success param
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('success') === 'true') {
+    isPro = true;
+    showProSuccess();
+  } else {
+    // Show upgrade banner for free users
+    document.getElementById('upgrade-banner').style.display = 'flex';
+  }
+}
+
+function showProSuccess() {
+  document.getElementById('upgrade-banner').style.display = 'none';
+  document.getElementById('pro-nav').innerHTML = `
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 5l-6 6-3-3"/></svg>
+    <span style="color:var(--green);font-weight:600;">Pro Active ✓</span>
+  `;
+  document.getElementById('pro-nav').style.background = 'rgba(34,197,94,0.1)';
+  document.getElementById('pro-nav').style.border = '1px solid rgba(34,197,94,0.3)';
+  document.getElementById('pro-nav').onclick = null;
 }
 
 // ── INIT ──
