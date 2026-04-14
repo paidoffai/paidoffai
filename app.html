@@ -375,12 +375,15 @@ function enterApp(user) {
   auth.style.display = 'none';
   app.classList.add('active');
   app.style.display = 'flex';
-  window.scrollTo(0, 0);
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
   const initials = user.email ? user.email[0].toUpperCase() : '?';
   document.getElementById('user-initials').textContent = initials;
   document.getElementById('user-email-display').textContent = user.email || '';
   if (loans.length === 0) addLoan();
   checkProStatus();
+  // Force repaint to fix black screen
+  setTimeout(() => { app.style.opacity = '0.99'; setTimeout(() => { app.style.opacity = '1'; }, 50); }, 10);
 }
 
 async function handleLogout() {
@@ -598,15 +601,28 @@ async function handleUpgrade() {
 }
 
 function checkProStatus() {
-  // Check URL for success param
   const params = new URLSearchParams(window.location.search);
+  
+  // If coming back from successful payment
   if (params.get('success') === 'true') {
     isPro = true;
+    // Save pro status to localStorage
+    localStorage.setItem('paidoffai_pro_' + currentUser.email, 'true');
+    // Clean URL
+    window.history.replaceState({}, '', '/app');
     showProSuccess();
-  } else {
-    // Show upgrade banner for free users
-    document.getElementById('upgrade-banner').style.display = 'flex';
+    return;
   }
+  
+  // Check if already pro from localStorage
+  if (currentUser && localStorage.getItem('paidoffai_pro_' + currentUser.email) === 'true') {
+    isPro = true;
+    showProSuccess();
+    return;
+  }
+  
+  // Show upgrade banner for free users
+  document.getElementById('upgrade-banner').style.display = 'flex';
 }
 
 function showProSuccess() {
