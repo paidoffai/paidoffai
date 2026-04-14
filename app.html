@@ -599,6 +599,7 @@ function displayResults(res) {
     rows.appendChild(row);
   });
   document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function generatePlan() {
@@ -620,10 +621,12 @@ function switchStrat(s, btn) {
   document.getElementById('btn-sn').classList.remove('on');
   if (s === 'avalanche') {
     document.getElementById('btn-av').classList.add('on');
-    if (resAv) displayResults(resAv);
+    if (resAv) { displayResults(resAv); }
+    else { alert('Please generate your plan first!'); }
   } else {
     document.getElementById('btn-sn').classList.add('on');
-    if (resSn) displayResults(resSn);
+    if (resSn) { displayResults(resSn); }
+    else { alert('Please generate your plan first!'); }
   }
 }
 
