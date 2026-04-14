@@ -616,9 +616,15 @@ function generatePlan() {
 
 function switchStrat(s, btn) {
   strategy = s;
-  document.querySelectorAll('.strat-btn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  if (resAv) displayResults(s === 'avalanche' ? resAv : resSn);
+  document.getElementById('btn-av').classList.remove('on');
+  document.getElementById('btn-sn').classList.remove('on');
+  if (s === 'avalanche') {
+    document.getElementById('btn-av').classList.add('on');
+    if (resAv) displayResults(resAv);
+  } else {
+    document.getElementById('btn-sn').classList.add('on');
+    if (resSn) displayResults(resSn);
+  }
 }
 
 function resetAll() {
