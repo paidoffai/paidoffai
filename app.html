@@ -529,25 +529,25 @@ async function loadLoans() {
   loans = [];
   loanId = 0;
   
-  // Add each saved loan
+  // Add each saved loan with a small delay between each
+  var delay = 0;
   result.data.forEach(function(l) {
-    addLoan();
-    // Wait for DOM then fill values
-    var currentId = loanId;
+    delay += 200;
     setTimeout(function() {
-      var card = document.getElementById('loan-' + currentId);
-      if (!card) return;
-      var nameEl = card.querySelector('[data-f="name"]');
-      var balEl = card.querySelector('[data-f="balance"]');
-      var rateEl = card.querySelector('[data-f="rate"]');
-      var minPayEl = card.querySelector('[data-f="minPay"]');
-      var typeEl = card.querySelector('[data-f="type"]');
-      if (nameEl) nameEl.value = l.name || '';
-      if (balEl) balEl.value = l.balance || '';
-      if (rateEl) rateEl.value = l.rate || '';
-      if (minPayEl) minPayEl.value = l.min_payment || '';
-      if (typeEl) typeEl.value = l.loan_type || 'other';
-    }, 100);
+      addLoan();
+      var currentId = loanId;
+      setTimeout(function() {
+        var inputs = document.querySelectorAll('[data-id="' + currentId + '"]');
+        inputs.forEach(function(input) {
+          var field = input.getAttribute('data-f');
+          if (field === 'name') input.value = l.name || '';
+          if (field === 'balance') input.value = l.balance || '';
+          if (field === 'rate') input.value = l.rate || '';
+          if (field === 'minPay') input.value = l.min_payment || '';
+          if (field === 'type') input.value = l.loan_type || 'other';
+        });
+      }, 50);
+    }, delay);
   });
   
   console.log('Loans loaded!', result.data.length, 'loans');
