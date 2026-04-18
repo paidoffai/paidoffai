@@ -532,12 +532,22 @@ async function loadLoans() {
   // Add each saved loan
   result.data.forEach(function(l) {
     addLoan();
-    var card = document.getElementById('loan-' + loanId);
-    card.querySelector('[data-f="name"]').value = l.name;
-    card.querySelector('[data-f="balance"]').value = l.balance;
-    card.querySelector('[data-f="rate"]').value = l.rate;
-    card.querySelector('[data-f="minPay"]').value = l.min_payment;
-    card.querySelector('[data-f="type"]').value = l.loan_type || 'other';
+    // Wait for DOM then fill values
+    var currentId = loanId;
+    setTimeout(function() {
+      var card = document.getElementById('loan-' + currentId);
+      if (!card) return;
+      var nameEl = card.querySelector('[data-f="name"]');
+      var balEl = card.querySelector('[data-f="balance"]');
+      var rateEl = card.querySelector('[data-f="rate"]');
+      var minPayEl = card.querySelector('[data-f="minPay"]');
+      var typeEl = card.querySelector('[data-f="type"]');
+      if (nameEl) nameEl.value = l.name || '';
+      if (balEl) balEl.value = l.balance || '';
+      if (rateEl) rateEl.value = l.rate || '';
+      if (minPayEl) minPayEl.value = l.min_payment || '';
+      if (typeEl) typeEl.value = l.loan_type || 'other';
+    }, 100);
   });
   
   console.log('Loans loaded!', result.data.length, 'loans');
