@@ -524,35 +524,41 @@ async function loadLoans() {
   if (result.error) { console.log('Load error:', result.error); return; }
   if (!result.data || result.data.length === 0) { addLoan(); return; }
   
-  // Clear existing loans
+  // Clear container
   document.getElementById('loans-container').innerHTML = '';
   loans = [];
   loanId = 0;
-  
-  // Add all loans at once then fill values
+
+  // Build HTML directly - most reliable approach
   result.data.forEach(function(l) {
-    addLoan();
+    loanId++;
+    var id = loanId;
+    loans.push(id);
+    var div = document.createElement('div');
+    div.className = 'loan-card';
+    div.id = 'loan-' + id;
+    div.innerHTML = '<div class="loan-top">' +
+      '<span class="loan-badge">Loan #' + loans.length + '</span>' +
+      '<button class="loan-del" onclick="removeLoan(' + id + ')">×</button>' +
+      '</div>' +
+      '<div class="loan-grid">' +
+      '<div class="lf span2"><label>Loan name</label><input type="text" data-f="name" data-id="' + id + '" value="' + (l.name||'') + '"/></div>' +
+      '<div class="lf"><label>Balance ($)</label><input type="number" data-f="balance" data-id="' + id + '" value="' + (l.balance||'') + '"/></div>' +
+      '<div class="lf"><label>Interest rate (%)</label><input type="number" data-f="rate" data-id="' + id + '" value="' + (l.rate||'') + '"/></div>' +
+      '<div class="lf"><label>Min payment ($)</label><input type="number" data-f="minPay" data-id="' + id + '" value="' + (l.min_payment||'') + '"/></div>' +
+      '<div class="lf"><label>Loan type</label>' +
+      '<select data-f="type" data-id="' + id + '">' +
+      '<option value="credit_card"' + (l.loan_type==='credit_card'?' selected':'') + '>Credit card</option>' +
+      '<option value="student"' + (l.loan_type==='student'?' selected':'') + '>Student loan</option>' +
+      '<option value="personal"' + (l.loan_type==='personal'?' selected':'') + '>Personal loan</option>' +
+      '<option value="auto"' + (l.loan_type==='auto'?' selected':'') + '>Auto loan</option>' +
+      '<option value="mortgage"' + (l.loan_type==='mortgage'?' selected':'') + '>Mortgage</option>' +
+      '<option value="other"' + (!l.loan_type||l.loan_type==='other'?' selected':'') + '>Other</option>' +
+      '</select></div>' +
+      '</div>';
+    document.getElementById('loans-container').appendChild(div);
   });
-  
-  // After all loans added, fill values
-  setTimeout(function() {
-    var cards = document.querySelectorAll('.loan-card');
-    cards.forEach(function(card, index) {
-      var l = result.data[index];
-      if (!l) return;
-      var id = card.id.replace('loan-', '');
-      var inputs = card.querySelectorAll('input, select');
-      inputs.forEach(function(input) {
-        var field = input.getAttribute('data-f');
-        if (field === 'name') input.value = l.name || '';
-        if (field === 'balance') input.value = l.balance || '';
-        if (field === 'rate') input.value = l.rate || '';
-        if (field === 'minPay') input.value = l.min_payment || '';
-        if (field === 'type') input.value = l.loan_type || 'other';
-      });
-    });
-    console.log('Loans loaded and filled!', result.data.length);
-  }, 300);
+  console.log('Loans loaded:', result.data.length);
 }
 
 // ── LOANS ──────────────────────────────────────────────────────
