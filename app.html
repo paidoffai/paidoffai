@@ -529,28 +529,30 @@ async function loadLoans() {
   loans = [];
   loanId = 0;
   
-  // Add each saved loan with a small delay between each
-  var delay = 0;
+  // Add all loans at once then fill values
   result.data.forEach(function(l) {
-    delay += 200;
-    setTimeout(function() {
-      addLoan();
-      var currentId = loanId;
-      setTimeout(function() {
-        var inputs = document.querySelectorAll('[data-id="' + currentId + '"]');
-        inputs.forEach(function(input) {
-          var field = input.getAttribute('data-f');
-          if (field === 'name') input.value = l.name || '';
-          if (field === 'balance') input.value = l.balance || '';
-          if (field === 'rate') input.value = l.rate || '';
-          if (field === 'minPay') input.value = l.min_payment || '';
-          if (field === 'type') input.value = l.loan_type || 'other';
-        });
-      }, 50);
-    }, delay);
+    addLoan();
   });
   
-  console.log('Loans loaded!', result.data.length, 'loans');
+  // After all loans added, fill values
+  setTimeout(function() {
+    var cards = document.querySelectorAll('.loan-card');
+    cards.forEach(function(card, index) {
+      var l = result.data[index];
+      if (!l) return;
+      var id = card.id.replace('loan-', '');
+      var inputs = card.querySelectorAll('input, select');
+      inputs.forEach(function(input) {
+        var field = input.getAttribute('data-f');
+        if (field === 'name') input.value = l.name || '';
+        if (field === 'balance') input.value = l.balance || '';
+        if (field === 'rate') input.value = l.rate || '';
+        if (field === 'minPay') input.value = l.min_payment || '';
+        if (field === 'type') input.value = l.loan_type || 'other';
+      });
+    });
+    console.log('Loans loaded and filled!', result.data.length);
+  }, 300);
 }
 
 // ── LOANS ──────────────────────────────────────────────────────
