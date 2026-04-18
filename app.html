@@ -648,6 +648,7 @@ function resetAll() {
 async function getAI(data, av, sn) {
   const el = document.getElementById('ai-content');
   el.innerHTML = '<div class="ai-body"><span class="spinner"></span> Analyzing your loans...</div>';
+
   const total = data.reduce((s, l) => s + l.balance, 0);
   const prompt = `You are a friendly debt advisor. Give a 2-3 sentence personalized recommendation.
 Loans: ${data.map(l => `${l.name}: $${l.balance} at ${l.rate}%`).join(', ')}
