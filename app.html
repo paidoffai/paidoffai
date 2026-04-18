@@ -646,12 +646,18 @@ function switchStrat(s) {
   strategy = s;
   document.getElementById('btn-av').className = 'strat-btn' + (s === 'avalanche' ? ' on' : '');
   document.getElementById('btn-sn').className = 'strat-btn' + (s === 'snowball' ? ' on' : '');
-  if (s === 'avalanche') {
-    if (window.resAv) displayResults(window.resAv);
+  // Recalculate if needed
+  if (!window.resAv || !window.resSn) {
+    var data = getLoansData();
+    if (data.length > 0) {
+      var ex = parseFloat(document.getElementById('extra-payment').value) || 0;
+      window.resAv = calc(data, ex, 'avalanche');
+      window.resSn = calc(data, ex, 'snowball');
+      loansData = data;
+    }
   }
-  if (s === 'snowball') {
-    if (window.resSn) displayResults(window.resSn);
-  }
+  if (s === 'avalanche' && window.resAv) displayResults(window.resAv);
+  if (s === 'snowball' && window.resSn) displayResults(window.resSn);
 }
 
 function resetAll() {
