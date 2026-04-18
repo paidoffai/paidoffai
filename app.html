@@ -625,12 +625,14 @@ function generatePlan() {
 
 function switchStrat(s) {
   strategy = s;
-  // Update buttons
   document.getElementById('btn-av').className = 'strat-btn' + (s === 'avalanche' ? ' on' : '');
   document.getElementById('btn-sn').className = 'strat-btn' + (s === 'snowball' ? ' on' : '');
-  // Show results
-  var res = (s === 'avalanche') ? window.resAv : window.resSn;
-  if (res) displayResults(res);
+  if (s === 'avalanche') {
+    if (window.resAv) displayResults(window.resAv);
+  }
+  if (s === 'snowball') {
+    if (window.resSn) displayResults(window.resSn);
+  }
 }
 
 function resetAll() {
