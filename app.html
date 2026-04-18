@@ -600,7 +600,7 @@ function displayResults(res) {
     rows.appendChild(row);
   });
   document.getElementById('results').style.display = 'block';
-  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
 }
 
 function generatePlan() {
@@ -625,16 +625,12 @@ function generatePlan() {
 
 function switchStrat(s) {
   strategy = s;
-  document.getElementById('btn-av').classList.toggle('on', s === 'avalanche');
-  document.getElementById('btn-sn').classList.toggle('on', s === 'snowball');
-  
-  console.log('Switching to:', s, 'resAv:', !!window.resAv, 'resSn:', !!window.resSn);
-  
-  if (s === 'avalanche' && window.resAv) {
-    displayResults(window.resAv);
-  } else if (s === 'snowball' && window.resSn) {
-    displayResults(window.resSn);
-  }
+  // Update buttons
+  document.getElementById('btn-av').className = 'strat-btn' + (s === 'avalanche' ? ' on' : '');
+  document.getElementById('btn-sn').className = 'strat-btn' + (s === 'snowball' ? ' on' : '');
+  // Show results
+  var res = (s === 'avalanche') ? window.resAv : window.resSn;
+  if (res) displayResults(res);
 }
 
 function resetAll() {
