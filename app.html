@@ -419,8 +419,8 @@ function showApp(u) {
     window.history.replaceState({}, '', '/app');
   }
 
-  // Add default loan
-  if (loans.length === 0) addLoan();
+  // Load saved loans or add default
+  loadLoans();
 }
 
 function activatePro() {
@@ -486,6 +486,61 @@ function doUpgrade() {
   if (!user) return;
   const email = encodeURIComponent(user.email);
   window.location.href = PAY_URL + '?prefilled_email=' + email;
+}
+
+// ── SAVE/LOAD LOANS ────────────────────────────────────────────
+async function saveLoans() {
+  if (!sb || !user) return;
+  var loansToSave = getLoansData();
+  if (loansToSave.length === 0) return;
+  
+  // Delete existing loans for this user
+  await sb.from('loans').delete().eq('user_id', user.id);
+  
+  // Insert new loans
+  var rows = loansToSave.map(function(l) {
+    return {
+      user_id: user.id,
+      name: l.name,
+      balance: l.balance,
+      rate: l.rate,
+      min_payment: l.minPay,
+      loan_type: l.type
+    };
+  });
+  
+  var result = await sb.from('loans').insert(rows);
+  if (result.error) {
+    console.log('Save error:', result.error);
+  } else {
+    console.log('Loans saved!', rows.length, 'loans');
+  }
+}
+
+async function loadLoans() {
+  if (!sb || !user) return;
+  
+  var result = await sb.from('loans').select('*').eq('user_id', user.id).order('created_at');
+  if (result.error) { console.log('Load error:', result.error); return; }
+  if (!result.data || result.data.length === 0) { addLoan(); return; }
+  
+  // Clear existing loans
+  document.getElementById('loans-container').innerHTML = '';
+  loans = [];
+  loanId = 0;
+  
+  // Add each saved loan
+  result.data.forEach(function(l) {
+    addLoan();
+    var card = document.getElementById('loan-' + loanId);
+    card.querySelector('[data-f="name"]').value = l.name;
+    card.querySelector('[data-f="balance"]').value = l.balance;
+    card.querySelector('[data-f="rate"]').value = l.rate;
+    card.querySelector('[data-f="minPay"]').value = l.min_payment;
+    card.querySelector('[data-f="type"]').value = l.loan_type || 'other';
+  });
+  
+  console.log('Loans loaded!', result.data.length, 'loans');
 }
 
 // ── LOANS ──────────────────────────────────────────────────────
@@ -625,6 +680,7 @@ function displayResults(res) {
 function generatePlan() {
   loansData = getLoansData();
   if (!loansData.length) { alert('Add at least one loan with a balance.'); return; }
+  saveLoans();
   extra = parseFloat(document.getElementById('extra-payment').value) || 0;
 
   // Calculate both strategies
