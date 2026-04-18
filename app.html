@@ -527,11 +527,30 @@ function removeLoan(id) {
 }
 
 function getLoansData() {
-  return Array.from(document.querySelectorAll('.loan-card')).map(card => {
-    const id = card.id.replace('loan-', '');
-    const g = f => card.querySelector(`[data-f="${f}"]`)?.value || '';
-    return { id, name: g('name') || 'Loan ' + id, balance: parseFloat(g('balance')) || 0, rate: parseFloat(g('rate')) || 0, minPay: parseFloat(g('minPay')) || 0, type: g('type') };
-  }).filter(l => l.balance > 0);
+  var cards = document.querySelectorAll('.loan-card');
+  var result = [];
+  for (var i = 0; i < cards.length; i++) {
+    var card = cards[i];
+    var id = card.id.replace('loan-', '');
+    var nameEl = card.querySelector('[data-f="name"]');
+    var balEl = card.querySelector('[data-f="balance"]');
+    var rateEl = card.querySelector('[data-f="rate"]');
+    var minPayEl = card.querySelector('[data-f="minPay"]');
+    var typeEl = card.querySelector('[data-f="type"]');
+    var balance = parseFloat(balEl ? balEl.value : 0) || 0;
+    if (balance > 0) {
+      result.push({
+        id: id,
+        name: (nameEl && nameEl.value) ? nameEl.value : 'Loan ' + id,
+        balance: balance,
+        rate: parseFloat(rateEl ? rateEl.value : 0) || 0,
+        minPay: parseFloat(minPayEl ? minPayEl.value : 0) || 0,
+        type: typeEl ? typeEl.value : 'other'
+      });
+    }
+  }
+  console.log('Loans found:', result.length, result);
+  return result;
 }
 
 // ── CALC ───────────────────────────────────────────────────────
