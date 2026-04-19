@@ -241,6 +241,31 @@ body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#e2e2e2;min-height:
 .tl-bal{font-size:12px;color:#666;}
 .tl-date{font-size:12px;font-weight:500;color:#22c55e;}
 
+/* PROGRESS TRACKER */
+.progress-page{display:none;padding:24px;}
+.progress-page.active{display:block;}
+.progress-header{margin-bottom:24px;}
+.progress-header h2{font-size:18px;font-weight:600;margin-bottom:4px;}
+.progress-header p{font-size:13px;color:#555;}
+.progress-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;}
+.progress-card{background:#161616;border:1px solid #262626;border-radius:10px;padding:16px;}
+.progress-card-label{font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px;}
+.progress-card-val{font-size:22px;font-weight:600;letter-spacing:-.5px;}
+.loan-progress-card{background:#161616;border:1px solid #262626;border-radius:10px;padding:16px;margin-bottom:12px;}
+.loan-progress-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.loan-progress-name{font-size:14px;font-weight:600;}
+.loan-progress-pct{font-size:13px;font-weight:600;color:#3b82f6;}
+.progress-bar-wrap{background:#1e1e1e;border-radius:20px;height:8px;margin-bottom:8px;overflow:hidden;}
+.progress-bar{height:100%;border-radius:20px;background:linear-gradient(90deg,#3b82f6,#22c55e);transition:width 0.5s ease;}
+.loan-progress-meta{display:flex;justify-content:space-between;font-size:11px;color:#444;}
+.payment-input-wrap{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.payment-input-wrap label{font-size:12px;color:#666;white-space:nowrap;}
+.payment-input-wrap input{flex:1;background:#0d0d0d;border:1px solid #262626;border-radius:7px;padding:6px 10px;color:#e2e2e2;font-family:'Inter',sans-serif;font-size:13px;outline:none;}
+.payment-input-wrap input:focus{border-color:#3b82f6;}
+.btn-record{padding:6px 14px;background:#3b82f6;border:none;border-radius:7px;color:white;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.btn-record:hover{background:#2563eb;}
+.no-loans-msg{text-align:center;padding:48px 24px;color:#444;font-size:14px;}
+
 @media(max-width:900px){
   .sidebar{display:none;}
   .main-area{width:100%;}
@@ -280,11 +305,11 @@ body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#e2e2e2;min-height:
   <div class="sidebar">
     <div class="sb-logo">Paid<b>Off</b>AI</div>
     <nav class="sb-nav">
-      <div class="sb-link on">
+      <div class="sb-link on" id="nav-dashboard" onclick="showDashboard()">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
         Dashboard
       </div>
-      <div class="sb-link" onclick="alert('Coming soon!')">
+      <div class="sb-link" id="nav-progress" onclick="showProgress()">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
         Progress
       </div>
@@ -318,6 +343,31 @@ body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#e2e2e2;min-height:
         <div class="stat-card"><div class="stat-lbl">Debt-free date</div><div class="stat-val c-green" id="s-date">—</div></div>
         <div class="stat-card"><div class="stat-lbl">Total interest</div><div class="stat-val c-red" id="s-interest">—</div></div>
         <div class="stat-card"><div class="stat-lbl">Monthly payment</div><div class="stat-val c-amber" id="s-monthly">—</div></div>
+      </div>
+
+      <!-- PROGRESS PAGE -->
+      <div class="progress-page" id="progress-page">
+        <div class="progress-header">
+          <h2>Your Debt Progress 📊</h2>
+          <p>Track your payments and see how far you've come</p>
+        </div>
+        <div class="progress-cards">
+          <div class="progress-card">
+            <div class="progress-card-label">Original Debt</div>
+            <div class="progress-card-val c-blue" id="prog-original">—</div>
+          </div>
+          <div class="progress-card">
+            <div class="progress-card-label">Remaining</div>
+            <div class="progress-card-val c-red" id="prog-remaining">—</div>
+          </div>
+          <div class="progress-card">
+            <div class="progress-card-label">Paid Off</div>
+            <div class="progress-card-val c-green" id="prog-paid">—</div>
+          </div>
+        </div>
+        <div id="loan-progress-list">
+          <div class="no-loans-msg">Add loans and generate your plan first to track progress!</div>
+        </div>
       </div>
 
       <div class="two-col">
@@ -479,6 +529,12 @@ async function doSignout() {
   if (sb) await sb.auth.signOut();
   appShown = false;
   user = null; loans = []; loanId = 0;
+  // Reset progress page to dashboard
+  document.getElementById('progress-page').classList.remove('active');
+  document.querySelector('.two-col').style.display = 'grid';
+  document.getElementById('nav-dashboard').classList.add('on');
+  document.getElementById('nav-progress').classList.remove('on');
+  // Reset main content
   document.getElementById('loans-container').innerHTML = '';
   document.getElementById('results').style.display = 'none';
   document.getElementById('stats-row').style.display = 'none';
@@ -780,10 +836,22 @@ Be warm, specific, encouraging. Under 60 words.`;
     });
     const d = await res.json();
     const txt = d.content?.[0]?.text || fallback(data, av, sn);
-    el.innerHTML = '<div class="ai-body">' + txt + '</div>';
+    const body = document.createElement('div');
+    body.className = 'ai-body';
+    body.innerHTML = txt;
+    el.innerHTML = '';
+    el.appendChild(body);
   } catch (e) {
-    el.innerHTML = '<div class="ai-body">' + fallback(data, av, sn) + '</div>';
+    const body = document.createElement('div');
+    body.className = 'ai-body';
+    body.innerHTML = fallback(data, av, sn);
+    el.innerHTML = '';
+    el.appendChild(body);
   }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function fallback(data, av, sn) {
@@ -793,7 +861,141 @@ function fallback(data, av, sn) {
   const firstLoan = current.order[0];
   const saving = Math.abs(av.totalInt - sn.totalInt);
   const savingText = saving > 0 ? `saves you ${fmt(saving)} in interest` : 'gives you a clear payoff order';
-  return `The <strong>${methodName} method</strong> ${savingText}. Focus on <strong>${firstLoan?.name}</strong> first — you'll be debt-free in ${current.months} months. Keep going! 💪`;
+  return `The <strong>${methodName} method</strong> ${savingText}. Focus on <strong>${escHtml(firstLoan?.name)}</strong> first — you'll be debt-free in ${current.months} months. Keep going! 💪`;
+}
+
+// ── PROGRESS TRACKER ───────────────────────────────────────────
+function showDashboard() {
+  document.getElementById('progress-page').classList.remove('active');
+  document.querySelector('.two-col').style.display = 'grid';
+  var hasResults = window.resAv !== null;
+  document.getElementById('stats-row').style.display = hasResults ? 'grid' : 'none';
+  document.getElementById('nav-dashboard').classList.add('on');
+  document.getElementById('nav-progress').classList.remove('on');
+}
+
+function showProgress() {
+  document.querySelector('.two-col').style.display = 'none';
+  document.getElementById('stats-row').style.display = 'none';
+  document.getElementById('progress-page').classList.add('active');
+  document.getElementById('nav-dashboard').classList.remove('on');
+  document.getElementById('nav-progress').classList.add('on');
+  renderProgress();
+}
+
+function renderProgress() {
+  var loans = getLoansData();
+  var list = document.getElementById('loan-progress-list');
+  
+  if (loans.length === 0) {
+    list.innerHTML = '<div class="no-loans-msg">Add loans and generate your plan first to track progress!</div>';
+    document.getElementById('prog-original').textContent = '—';
+    document.getElementById('prog-remaining').textContent = '—';
+    document.getElementById('prog-paid').textContent = '—';
+    return;
+  }
+
+  // Load saved progress from localStorage
+  var progressKey = 'progress_' + (user?.email || 'demo');
+  var savedProgress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+
+  var totalOriginal = 0;
+  var totalRemaining = 0;
+
+  loans.forEach(function(loan) {
+    var paid = parseFloat(savedProgress[loan.name] || 0);
+    totalOriginal += loan.balance + paid;
+    totalRemaining += loan.balance;
+  });
+
+  var totalPaid = totalOriginal - totalRemaining;
+  
+  document.getElementById('prog-original').textContent = fmt(totalOriginal);
+  document.getElementById('prog-remaining').textContent = fmt(totalRemaining);
+  document.getElementById('prog-paid').textContent = fmt(totalPaid);
+
+  list.innerHTML = '';
+  loans.forEach(function(loan) {
+    var paid = parseFloat(savedProgress[loan.name] || 0);
+    var original = loan.balance + paid;
+    var pct = original > 0 ? Math.round((paid / original) * 100) : 0;
+
+    var card = document.createElement('div');
+    card.className = 'loan-progress-card';
+
+    var top = document.createElement('div');
+    top.className = 'loan-progress-top';
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'loan-progress-name';
+    nameSpan.textContent = loan.name;
+    var pctSpan = document.createElement('span');
+    pctSpan.className = 'loan-progress-pct';
+    pctSpan.textContent = pct + '% paid';
+    top.appendChild(nameSpan);
+    top.appendChild(pctSpan);
+
+    var barWrap = document.createElement('div');
+    barWrap.className = 'progress-bar-wrap';
+    var bar = document.createElement('div');
+    bar.className = 'progress-bar';
+    bar.style.width = pct + '%';
+    barWrap.appendChild(bar);
+
+    var meta = document.createElement('div');
+    meta.className = 'loan-progress-meta';
+    var paidSpan = document.createElement('span');
+    paidSpan.textContent = 'Paid: ' + fmt(paid);
+    var remSpan = document.createElement('span');
+    remSpan.textContent = 'Remaining: ' + fmt(loan.balance);
+    meta.appendChild(paidSpan);
+    meta.appendChild(remSpan);
+
+    var payWrap = document.createElement('div');
+    payWrap.className = 'payment-input-wrap';
+    var payLabel = document.createElement('label');
+    payLabel.textContent = 'Record payment ($)';
+    var payInput = document.createElement('input');
+    payInput.type = 'number';
+    payInput.id = 'pay-' + loan.id;
+    payInput.placeholder = '0';
+    payInput.min = '0';
+    var payBtn = document.createElement('button');
+    payBtn.className = 'btn-record';
+    payBtn.textContent = '+ Add';
+    payBtn.dataset.loanId = loan.id;
+    payBtn.addEventListener('click', function() { recordPayment(this.dataset.loanId); });
+    payWrap.appendChild(payLabel);
+    payWrap.appendChild(payInput);
+    payWrap.appendChild(payBtn);
+
+    card.appendChild(top);
+    card.appendChild(barWrap);
+    card.appendChild(meta);
+    card.appendChild(payWrap);
+    list.appendChild(card);
+  });
+}
+
+function recordPayment(loanId) {
+  var input = document.getElementById('pay-' + loanId);
+  var amount = parseFloat(input.value) || 0;
+  if (amount <= 0) return;
+
+  // Find loan name from DOM card
+  var card = document.getElementById('loan-' + loanId);
+  var loanName = loanId; // fallback
+  if (card) {
+    var nameEl = card.querySelector('[data-f="name"]');
+    if (nameEl && nameEl.value) loanName = nameEl.value;
+  }
+
+  var progressKey = 'progress_' + (user?.email || 'demo');
+  var savedProgress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+  savedProgress[loanName] = (parseFloat(savedProgress[loanName] || 0) + amount);
+  localStorage.setItem(progressKey, JSON.stringify(savedProgress));
+
+  input.value = '';
+  renderProgress();
 }
 
 // ── INIT ───────────────────────────────────────────────────────
