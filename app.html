@@ -378,6 +378,7 @@ const PAY_URL = 'https://buy.stripe.com/test_00w28t7NJd3l918gSJdUY00';
 
 let sb = null;
 let user = null;
+let appShown = false;
 let loans = [];
 let loanId = 0;
 let strategy = 'avalanche';
@@ -396,6 +397,8 @@ function showAuth() {
 }
 
 function showApp(u) {
+  if (appShown) return;
+  appShown = true;
   user = u;
   document.getElementById('page-auth').style.display = 'none';
   document.getElementById('page-auth').classList.remove('active');
@@ -474,6 +477,7 @@ async function doSignup() {
 
 async function doSignout() {
   if (sb) await sb.auth.signOut();
+  appShown = false;
   user = null; loans = []; loanId = 0;
   document.getElementById('loans-container').innerHTML = '';
   document.getElementById('results').style.display = 'none';
@@ -685,10 +689,21 @@ function displayResults(res) {
 
   const rows = document.getElementById('tl-rows');
   rows.innerHTML = '';
-  res.order.forEach(loan => {
-    const row = document.createElement('div');
+  res.order.forEach(function(loan) {
+    var row = document.createElement('div');
     row.className = 'tl-row';
-    row.innerHTML = `<span class="tl-name">${loan.name}</span><span class="tl-bal">${fmt(loan.balance)}</span><span class="tl-date">${res.dates[loan.id] || '—'}</span>`;
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'tl-name';
+    nameSpan.textContent = loan.name;
+    var balSpan = document.createElement('span');
+    balSpan.className = 'tl-bal';
+    balSpan.textContent = fmt(loan.balance);
+    var dateSpan = document.createElement('span');
+    dateSpan.className = 'tl-date';
+    dateSpan.textContent = res.dates[loan.id] || '—';
+    row.appendChild(nameSpan);
+    row.appendChild(balSpan);
+    row.appendChild(dateSpan);
     rows.appendChild(row);
   });
   document.getElementById('results').style.display = 'block';
@@ -734,6 +749,11 @@ function switchStrat(s) {
 }
 
 function resetAll() {
+  strategy = 'avalanche';
+  window.resAv = null;
+  window.resSn = null;
+  document.getElementById('btn-av').className = 'strat-btn on';
+  document.getElementById('btn-sn').className = 'strat-btn';
   document.getElementById('results').style.display = 'none';
   document.getElementById('stats-row').style.display = 'none';
   document.getElementById('ai-content').innerHTML = '<div class="ai-body" style="color:#444;">Generate your plan to get an AI recommendation.</div>';
@@ -767,24 +787,26 @@ Be warm, specific, encouraging. Under 60 words.`;
 }
 
 function fallback(data, av, sn) {
-  const high = [...data].sort((a, b) => b.rate - a.rate)[0];
-  const better = av.totalInt <= sn.totalInt ? 'Avalanche' : 'Snowball';
+  const isSnowball = strategy === 'snowball';
+  const current = isSnowball ? sn : av;
+  const methodName = isSnowball ? 'Snowball' : 'Avalanche';
+  const firstLoan = current.order[0];
   const saving = Math.abs(av.totalInt - sn.totalInt);
-  return `The <strong>${better} method</strong> saves you ${fmt(saving)} in interest. Focus on <strong>${high?.name}</strong> first at ${high?.rate}% APR. You'll be debt-free in ${av.months} months. Keep going! 💪`;
+  const savingText = saving > 0 ? `saves you ${fmt(saving)} in interest` : 'gives you a clear payoff order';
+  return `The <strong>${methodName} method</strong> ${savingText}. Focus on <strong>${firstLoan?.name}</strong> first — you'll be debt-free in ${current.months} months. Keep going! 💪`;
 }
 
 // ── INIT ───────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
   if (sb) {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session?.user) {
-      showApp(session.user);
-    }
-    // Listen for auth changes
     sb.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) showApp(session.user);
       if (event === 'SIGNED_OUT') showAuth();
     });
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session?.user && !appShown) showAuth();
+  } else {
+    showAuth();
   }
 });
 </script>
