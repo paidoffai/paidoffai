@@ -334,6 +334,7 @@ body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#e2e2e2;min-height:
       <div class="topbar-btns">
         <button class="btn-sm btn-ghost" onclick="resetAll()">Reset</button>
         <button class="btn-sm btn-ghost" id="btn-export" onclick="exportPDF()" style="display:none;">⬇ Export PDF</button>
+        <button class="btn-sm btn-ghost" id="btn-reminder" onclick="setReminder()" style="display:none;">🔔 Set Reminder</button>
         <button class="btn-sm btn-primary" onclick="generatePlan()">Generate plan</button>
       </div>
     </div>
@@ -541,6 +542,7 @@ async function doSignout() {
   document.getElementById('results').style.display = 'none';
   document.getElementById('stats-row').style.display = 'none';
   document.getElementById('btn-export').style.display = 'none';
+  document.getElementById('btn-reminder').style.display = 'none';
   document.getElementById('ai-content').innerHTML = '<div class="ai-body" style="color:#444;">Generate your plan to get an AI recommendation.</div>';
   showAuth();
 }
@@ -767,6 +769,7 @@ function displayResults(res) {
   });
   document.getElementById('results').style.display = 'block';
   document.getElementById('btn-export').style.display = 'inline-flex';
+  document.getElementById('btn-reminder').style.display = 'inline-flex';
 
 }
 
@@ -817,6 +820,7 @@ function resetAll() {
   document.getElementById('results').style.display = 'none';
   document.getElementById('stats-row').style.display = 'none';
   document.getElementById('btn-export').style.display = 'none';
+  document.getElementById('btn-reminder').style.display = 'none';
   document.getElementById('ai-content').innerHTML = '<div class="ai-body" style="color:#444;">Generate your plan to get an AI recommendation.</div>';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1063,6 +1067,45 @@ function exportPDF() {
   win.document.close();
   win.focus();
   setTimeout(function() { win.print(); }, 500);
+}
+
+// ── CALENDAR REMINDER ──────────────────────────────────────────
+function setReminder() {
+  var res = strategy === 'snowball' ? window.resSn : window.resAv;
+  if (!res) { alert('Generate your plan first!'); return; }
+
+  // Get first loan to pay
+  var firstLoan = res.order[0];
+  var amount = firstLoan ? firstLoan.minPay : 0;
+  var loanName = firstLoan ? firstLoan.name : 'loan payment';
+
+  // Build calendar event details
+  var title = encodeURIComponent('PaidOffAI — Pay ' + loanName + ' ($' + Math.round(amount) + ')');
+  var details = encodeURIComponent(
+    'Monthly loan payment reminder from PaidOffAI.\n\n' +
+    'Loan: ' + loanName + '\n' +
+    'Amount: $' + Math.round(amount) + '\n' +
+    'Debt-free date: ' + res.date + '\n\n' +
+    'Track your progress: paidoffai.com/app'
+  );
+
+  // Set reminder for 1st of next month
+  var now = new Date();
+  var next = new Date(now.getFullYear(), now.getMonth() + 1, 1, 9, 0, 0);
+  var start = next.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  var end = new Date(next.getTime() + 30 * 60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+  // Google Calendar URL
+  var googleUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    '&text=' + title +
+    '&details=' + details +
+    '&dates=' + start + '/' + end +
+    '&recur=RRULE:FREQ=MONTHLY;COUNT=12';
+
+  var win = window.open(googleUrl, '_blank');
+  if (!win) {
+    alert('Please allow popups for paidoffai.com to open Google Calendar.');
+  }
 }
 
 // ── INIT ───────────────────────────────────────────────────────
