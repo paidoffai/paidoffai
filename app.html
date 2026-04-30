@@ -127,18 +127,8 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .tl-date{font-size:12px;font-weight:700;color:var(--green);}
 
 /* ── CHART ── */
-.chart-section{
-  margin-top:24px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:20px 22px;
-  position:relative;overflow:hidden;
-}
-.chart-section::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--blue),var(--green));
-}
+.chart-section{margin-top:24px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;position:relative;overflow:hidden;}
+.chart-section::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--blue),var(--green));}
 .chart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
 .chart-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
 .chart-legend{display:flex;gap:18px;}
@@ -146,17 +136,33 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .legend-dot{width:8px;height:8px;border-radius:50%;}
 .chart-wrap{position:relative;width:100%;overflow:hidden;}
 .chart-svg{width:100%;display:block;}
-.chart-tooltip{
-  position:absolute;pointer-events:none;
-  background:var(--surface2);border:1px solid var(--border2);
-  border-radius:10px;padding:10px 14px;
-  font-size:12px;color:var(--text);
-  box-shadow:0 8px 24px rgba(0,0,0,.4);
-  display:none;white-space:nowrap;z-index:10;
-}
+.chart-tooltip{position:absolute;pointer-events:none;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.4);display:none;white-space:nowrap;z-index:10;}
 .tooltip-month{font-weight:700;margin-bottom:4px;color:var(--text2);font-size:11px;}
 .tooltip-debt{color:var(--blue3);font-weight:700;}
 .tooltip-interest{color:var(--green);font-weight:700;}
+
+/* ── EXTRA PAYMENT SIMULATOR ── */
+.simulator-section{margin-top:24px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;position:relative;overflow:hidden;}
+.simulator-section::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),var(--green));}
+.sim-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;}
+.sim-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+.sim-input-row{display:flex;align-items:center;gap:10px;}
+.sim-input-row label{font-size:13px;color:var(--text2);white-space:nowrap;}
+.sim-input{width:110px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;outline:none;transition:border-color .2s;}
+.sim-input:focus{border-color:var(--blue2);}
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.sim-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.sim-card-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;}
+.sim-card.current .sim-card-label{color:var(--text3);}
+.sim-card.boosted .sim-card-label{color:var(--amber);}
+.sim-stat{margin-bottom:10px;}
+.sim-stat-name{font-size:11px;color:var(--text3);margin-bottom:3px;}
+.sim-stat-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.5px;}
+.sim-savings{background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(58,79,232,.05));border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.sim-saving-item{}
+.sim-saving-label{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.sim-saving-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green);}
+.sim-saving-val.months{color:var(--blue3);}
 
 /* ── PROGRESS PAGE ── */
 .progress-page{display:none;padding:24px;}
@@ -199,6 +205,9 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
   .budget-wrap{flex-direction:column;align-items:flex-start;gap:8px;}.budget-wrap input{width:100%;}
   .progress-cards{grid-template-columns:1fr 1fr;}.up-banner{flex-direction:column;gap:10px;}
   .chart-hdr{flex-direction:column;align-items:flex-start;gap:10px;}
+  .sim-grid{grid-template-columns:1fr;}
+  .sim-hdr{flex-direction:column;align-items:flex-start;}
+  .sim-savings{grid-template-columns:1fr 1fr;}
 }
 </style>
 </head>
@@ -323,7 +332,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
         </div>
       </div>
 
-      <!-- ── DEBT PAYOFF CHART ── -->
+      <!-- CHART -->
       <div class="chart-section" id="chart-section" style="display:none">
         <div class="chart-hdr">
           <div class="chart-title">📉 Debt Payoff Projection</div>
@@ -338,6 +347,42 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
             <div class="tooltip-month" id="tt-month"></div>
             <div class="tooltip-debt" id="tt-debt"></div>
             <div class="tooltip-interest" id="tt-interest"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXTRA PAYMENT SIMULATOR -->
+      <div class="simulator-section" id="simulator-section" style="display:none">
+        <div class="sim-hdr">
+          <div class="sim-title">💡 Extra Payment Simulator</div>
+          <div class="sim-input-row">
+            <label>What if I pay extra</label>
+            <input type="number" class="sim-input" id="sim-extra" placeholder="100" min="0" oninput="runSimulator()"/>
+            <label>$/month?</label>
+          </div>
+        </div>
+        <div class="sim-grid">
+          <div class="sim-card current">
+            <div class="sim-card-label">Current Plan</div>
+            <div class="sim-stat"><div class="sim-stat-name">Debt-free date</div><div class="sim-stat-val c-blue" id="sim-current-date">—</div></div>
+            <div class="sim-stat"><div class="sim-stat-name">Total interest</div><div class="sim-stat-val c-red" id="sim-current-int">—</div></div>
+            <div class="sim-stat"><div class="sim-stat-name">Monthly payment</div><div class="sim-stat-val c-amber" id="sim-current-pay">—</div></div>
+          </div>
+          <div class="sim-card boosted">
+            <div class="sim-card-label">⚡ With Extra Payment</div>
+            <div class="sim-stat"><div class="sim-stat-name">Debt-free date</div><div class="sim-stat-val c-green" id="sim-new-date">—</div></div>
+            <div class="sim-stat"><div class="sim-stat-name">Total interest</div><div class="sim-stat-val c-green" id="sim-new-int">—</div></div>
+            <div class="sim-stat"><div class="sim-stat-name">Monthly payment</div><div class="sim-stat-val c-amber" id="sim-new-pay">—</div></div>
+          </div>
+        </div>
+        <div class="sim-savings" id="sim-savings">
+          <div class="sim-saving-item">
+            <div class="sim-saving-label">Interest saved</div>
+            <div class="sim-saving-val" id="sim-int-saved">—</div>
+          </div>
+          <div class="sim-saving-item">
+            <div class="sim-saving-label">Time saved</div>
+            <div class="sim-saving-val months" id="sim-time-saved">—</div>
           </div>
         </div>
       </div>
@@ -453,6 +498,7 @@ async function doSignout(){
   document.getElementById('btn-export').style.display='none';
   document.getElementById('btn-reminder').style.display='none';
   document.getElementById('chart-section').style.display='none';
+  document.getElementById('simulator-section').style.display='none';
   document.getElementById('ai-content').innerHTML='<div class="ai-body" style="color:var(--text3);">Generate your plan to get an AI recommendation.</div>';
   showAuth();
 }
@@ -526,20 +572,18 @@ function getLoansData(){
   return result;
 }
 
-// ── CALC ──────────────────────────────────────────────────────
 function calc(data,extraPay,strat){
   let sorted=[...data].sort((a,b)=>strat==='avalanche'?b.rate-a.rate:a.balance-b.balance);
   let bals=sorted.map(l=>({...l,rem:l.balance,paid:false}));
   let totalMin=bals.reduce((s,l)=>s+l.minPay,0);
   let budget=totalMin+(parseFloat(extraPay)||0);
   let totalInt=0,month=0,dates={};
-  // Store monthly snapshots for chart
   let monthlyDebt=[],monthlyInterest=[];
   while(bals.some(l=>!l.paid)&&month<600){
-    month++;let freed=0;let monthInt=0;
+    month++;let freed=0;
     for(let i=0;i<bals.length;i++){
       if(bals[i].paid)continue;
-      const int=(bals[i].rem*(bals[i].rate/100))/12;totalInt+=int;monthInt+=int;bals[i].rem+=int-bals[i].minPay;
+      const int=(bals[i].rem*(bals[i].rate/100))/12;totalInt+=int;bals[i].rem+=int-bals[i].minPay;
       if(bals[i].rem<=0){freed+=Math.abs(bals[i].rem);bals[i].rem=0;bals[i].paid=true;if(!dates[bals[i].id]){const d=new Date();d.setMonth(d.getMonth()+month);dates[bals[i].id]=d.toLocaleDateString('en-US',{month:'short',year:'numeric'});}}
     }
     let pool=(budget-totalMin)+freed;totalMin=bals.filter(l=>!l.paid).reduce((s,l)=>s+l.minPay,0);
@@ -547,7 +591,6 @@ function calc(data,extraPay,strat){
       if(bals[i].paid)continue;bals[i].rem-=pool;
       if(bals[i].rem<=0){pool=Math.abs(bals[i].rem);bals[i].rem=0;bals[i].paid=true;if(!dates[bals[i].id]){const d=new Date();d.setMonth(d.getMonth()+month);dates[bals[i].id]=d.toLocaleDateString('en-US',{month:'short',year:'numeric'});}totalMin=bals.filter(l=>!l.paid).reduce((s,l)=>s+l.minPay,0);}else break;
     }
-    // Record snapshot every month (sample every N months for performance)
     let remaining=bals.reduce((s,l)=>s+Math.max(0,l.rem),0);
     monthlyDebt.push({m:month,v:remaining});
     monthlyInterest.push({m:month,v:totalInt});
@@ -558,6 +601,7 @@ function calc(data,extraPay,strat){
 
 function fmt(n){return'$'+Math.round(n).toLocaleString();}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtK(n){if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';if(n>=1000)return'$'+(n/1000).toFixed(0)+'K';return'$'+Math.round(n);}
 
 function displayResults(res){
   const total=loansData.reduce((s,l)=>s+l.balance,0);
@@ -577,137 +621,90 @@ function displayResults(res){
   document.getElementById('results').style.display='block';
   document.getElementById('btn-export').style.display='inline-flex';
   document.getElementById('btn-reminder').style.display='inline-flex';
-  // Draw chart
   drawChart(res);
   document.getElementById('chart-section').style.display='block';
+  // Show simulator
+  document.getElementById('simulator-section').style.display='block';
+  document.getElementById('sim-extra').value='';
+  runSimulator();
+}
+
+// ── EXTRA PAYMENT SIMULATOR ────────────────────────────────────
+function runSimulator(){
+  if(!loansData.length||!window.resAv)return;
+  var simExtra=parseFloat(document.getElementById('sim-extra').value)||0;
+  var current=strategy==='snowball'?window.resSn:window.resAv;
+  var boosted=calc(loansData,extra+simExtra,strategy);
+
+  document.getElementById('sim-current-date').textContent=current.date;
+  document.getElementById('sim-current-int').textContent=fmt(current.totalInt);
+  document.getElementById('sim-current-pay').textContent=fmt(current.monthly);
+
+  document.getElementById('sim-new-date').textContent=boosted.date;
+  document.getElementById('sim-new-int').textContent=fmt(boosted.totalInt);
+  document.getElementById('sim-new-pay').textContent=fmt(boosted.monthly);
+
+  var intSaved=current.totalInt-boosted.totalInt;
+  var monthsSaved=current.months-boosted.months;
+  var yearsSaved=Math.floor(monthsSaved/12);
+  var remMonths=monthsSaved%12;
+  var timeStr=monthsSaved<=0?'No change':
+    yearsSaved>0?(yearsSaved+'y '+(remMonths>0?remMonths+'m':'')).trim():
+    monthsSaved+'m faster';
+
+  document.getElementById('sim-int-saved').textContent=intSaved>0?fmt(intSaved):'$0';
+  document.getElementById('sim-time-saved').textContent=timeStr;
 }
 
 // ── CHART ─────────────────────────────────────────────────────
 function drawChart(res){
   var W=800,H=260,padL=58,padR=20,padT=16,padB=40;
   var plotW=W-padL-padR,plotH=H-padT-padB;
-
-  var debt=res.monthlyDebt;
-  var interest=res.monthlyInterest;
-  var totalMonths=res.months;
-
-  // Sample points (max 60 for performance)
+  var debt=res.monthlyDebt,interest=res.monthlyInterest,totalMonths=res.months;
   var step=Math.max(1,Math.floor(totalMonths/60));
   var pts=[];
-  for(var i=0;i<debt.length;i+=step){
-    pts.push({m:debt[i].m,debt:debt[i].v,int:interest[i].v});
-  }
-  // Always include last point
-  if(pts.length===0||pts[pts.length-1].m!==debt[debt.length-1].m){
-    pts.push({m:debt[debt.length-1].m,debt:debt[debt.length-1].v,int:interest[interest.length-1].v});
-  }
-
+  for(var i=0;i<debt.length;i+=step)pts.push({m:debt[i].m,debt:debt[i].v,int:interest[i].v});
+  if(pts.length===0||pts[pts.length-1].m!==debt[debt.length-1].m)pts.push({m:debt[debt.length-1].m,debt:debt[debt.length-1].v,int:interest[interest.length-1].v});
   var maxDebt=loansData.reduce((s,l)=>s+l.balance,0);
-  var maxInt=res.totalInt;
-  var maxY=Math.max(maxDebt,maxInt)*1.08;
-
+  var maxY=Math.max(maxDebt,res.totalInt)*1.08;
   function px(m){return padL+(m/totalMonths)*plotW;}
   function py(v){return padT+plotH-(v/maxY)*plotH;}
-
-  // Build path strings
   var debtPath='M'+px(0)+','+py(maxDebt);
   var intPath='M'+px(0)+','+py(0);
-  pts.forEach(function(p){
-    debtPath+=' L'+px(p.m).toFixed(1)+','+py(p.debt).toFixed(1);
-    intPath+=' L'+px(p.m).toFixed(1)+','+py(p.int).toFixed(1);
-  });
-
-  // Filled area for debt
+  pts.forEach(function(p){debtPath+=' L'+px(p.m).toFixed(1)+','+py(p.debt).toFixed(1);intPath+=' L'+px(p.m).toFixed(1)+','+py(p.int).toFixed(1);});
   var debtArea=debtPath+' L'+px(totalMonths)+','+py(0)+' L'+px(0)+','+py(0)+' Z';
   var intArea=intPath+' L'+px(totalMonths)+','+py(0)+' L'+px(0)+','+py(0)+' Z';
-
-  // Y axis labels
-  var yTicks=4;
   var yLabels='';
-  for(var t=0;t<=yTicks;t++){
-    var val=(maxY/yTicks)*t;
-    var y=py(val);
-    yLabels+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>';
-    yLabels+='<text x="'+(padL-6)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" fill="rgba(240,242,255,0.3)" font-size="10" font-family="Plus Jakarta Sans,sans-serif">'+fmtK(val)+'</text>';
-  }
-
-  // X axis labels (every ~6 months)
+  for(var t=0;t<=4;t++){var val=(maxY/4)*t;var y=py(val);yLabels+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(255,255,255,0.05)" stroke-width="1"/><text x="'+(padL-6)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" fill="rgba(240,242,255,0.3)" font-size="10" font-family="Plus Jakarta Sans,sans-serif">'+fmtK(val)+'</text>';}
   var xLabels='';
   var xStep=Math.max(6,Math.round(totalMonths/6/6)*6);
   var now=new Date();
-  for(var xm=0;xm<=totalMonths;xm+=xStep){
-    var xv=px(xm);
-    var d2=new Date(now.getFullYear(),now.getMonth()+xm,1);
-    var lbl=d2.toLocaleDateString('en-US',{month:'short',year:'2-digit'});
-    xLabels+='<text x="'+xv.toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" fill="rgba(240,242,255,0.3)" font-size="9" font-family="Plus Jakarta Sans,sans-serif">'+lbl+'</text>';
-  }
-
-  var svg=
-    '<defs>'+
-      '<linearGradient id="gDebt" x1="0" y1="0" x2="0" y2="1">'+
-        '<stop offset="0%" stop-color="#818cf8" stop-opacity="0.25"/>'+
-        '<stop offset="100%" stop-color="#818cf8" stop-opacity="0.02"/>'+
-      '</linearGradient>'+
-      '<linearGradient id="gInt" x1="0" y1="0" x2="0" y2="1">'+
-        '<stop offset="0%" stop-color="#4ade80" stop-opacity="0.2"/>'+
-        '<stop offset="100%" stop-color="#4ade80" stop-opacity="0.02"/>'+
-      '</linearGradient>'+
-    '</defs>'+
-    yLabels+xLabels+
-    '<path d="'+debtArea+'" fill="url(#gDebt)"/>'+
-    '<path d="'+intArea+'" fill="url(#gInt)"/>'+
-    '<path d="'+debtPath+'" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+
-    '<path d="'+intPath+'" fill="none" stroke="#4ade80" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5,3"/>'+
-    // Hover overlay (transparent rect for mouse events)
-    '<rect id="chart-hover" x="'+padL+'" y="'+padT+'" width="'+plotW+'" height="'+plotH+'" fill="transparent" style="cursor:crosshair"/>';
-
+  for(var xm=0;xm<=totalMonths;xm+=xStep){var xv=px(xm);var d2=new Date(now.getFullYear(),now.getMonth()+xm,1);xLabels+='<text x="'+xv.toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" fill="rgba(240,242,255,0.3)" font-size="9" font-family="Plus Jakarta Sans,sans-serif">'+d2.toLocaleDateString('en-US',{month:'short',year:'2-digit'})+'</text>';}
+  var svg='<defs><linearGradient id="gDebt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#818cf8" stop-opacity="0.25"/><stop offset="100%" stop-color="#818cf8" stop-opacity="0.02"/></linearGradient><linearGradient id="gInt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4ade80" stop-opacity="0.2"/><stop offset="100%" stop-color="#4ade80" stop-opacity="0.02"/></linearGradient></defs>'+yLabels+xLabels+'<path d="'+debtArea+'" fill="url(#gDebt)"/><path d="'+intArea+'" fill="url(#gInt)"/><path d="'+debtPath+'" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><path d="'+intPath+'" fill="none" stroke="#4ade80" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5,3"/><rect id="chart-hover" x="'+padL+'" y="'+padT+'" width="'+plotW+'" height="'+plotH+'" fill="transparent" style="cursor:crosshair"/>';
   document.getElementById('chart-svg').innerHTML=svg;
-
-  // Store data for tooltip
   document.getElementById('chart-svg')._chartData={pts:pts,totalMonths:totalMonths,maxY:maxY,padL:padL,padR:padR,padT:padT,padB:padB,W:W,H:H,plotW:plotW,plotH:plotH,now:now};
-
-  // Mouse events
   var rect=document.getElementById('chart-hover');
   var tooltip=document.getElementById('chart-tooltip');
   if(rect){
     rect.addEventListener('mousemove',function(e){
-      var cd=document.getElementById('chart-svg')._chartData;
-      if(!cd)return;
-      var svgEl=document.getElementById('chart-svg');
-      var bbox=svgEl.getBoundingClientRect();
-      // Map mouse X to SVG coordinate
-      var mouseX=e.clientX-bbox.left;
-      var svgX=(mouseX/bbox.width)*cd.W;
+      var cd=document.getElementById('chart-svg')._chartData;if(!cd)return;
+      var bbox=document.getElementById('chart-svg').getBoundingClientRect();
+      var svgX=((e.clientX-bbox.left)/bbox.width)*cd.W;
       var fracX=(svgX-cd.padL)/cd.plotW;
       if(fracX<0||fracX>1)return;
       var targetMonth=Math.round(fracX*cd.totalMonths);
-      // Find closest point
       var closest=cd.pts[0];
       cd.pts.forEach(function(p){if(Math.abs(p.m-targetMonth)<Math.abs(closest.m-targetMonth))closest=p;});
-      // Date label
       var d=new Date(cd.now.getFullYear(),cd.now.getMonth()+closest.m,1);
-      var lbl=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
-      document.getElementById('tt-month').textContent=lbl+' (month '+closest.m+')';
+      document.getElementById('tt-month').textContent=d.toLocaleDateString('en-US',{month:'long',year:'numeric'})+' (month '+closest.m+')';
       document.getElementById('tt-debt').textContent='Remaining debt: '+fmt(closest.debt);
       document.getElementById('tt-interest').textContent='Interest paid: '+fmt(closest.int);
-      // Position tooltip
-      var tipX=e.clientX-bbox.left+12;
-      var tipY=e.clientY-bbox.top-10;
+      var tipX=e.clientX-bbox.left+12;var tipY=e.clientY-bbox.top-10;
       if(tipX>bbox.width-180)tipX=e.clientX-bbox.left-170;
-      tooltip.style.left=tipX+'px';
-      tooltip.style.top=tipY+'px';
-      tooltip.style.display='block';
+      tooltip.style.left=tipX+'px';tooltip.style.top=tipY+'px';tooltip.style.display='block';
     });
-    rect.addEventListener('mouseleave',function(){
-      document.getElementById('chart-tooltip').style.display='none';
-    });
+    rect.addEventListener('mouseleave',function(){document.getElementById('chart-tooltip').style.display='none';});
   }
-}
-
-function fmtK(n){
-  if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';
-  if(n>=1000)return'$'+(n/1000).toFixed(0)+'K';
-  return'$'+Math.round(n);
 }
 
 function generatePlan(){
@@ -737,6 +734,7 @@ function resetAll(){
   document.getElementById('btn-export').style.display='none';
   document.getElementById('btn-reminder').style.display='none';
   document.getElementById('chart-section').style.display='none';
+  document.getElementById('simulator-section').style.display='none';
   document.getElementById('ai-content').innerHTML='<div class="ai-body" style="color:var(--text3);">Generate your plan to get an AI recommendation.</div>';
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -768,6 +766,7 @@ function showDashboard(){
   document.querySelector('.two-col').style.display='grid';
   document.getElementById('stats-row').style.display=window.resAv!==null?'grid':'none';
   document.getElementById('chart-section').style.display=window.resAv!==null?'block':'none';
+  document.getElementById('simulator-section').style.display=window.resAv!==null?'block':'none';
   document.getElementById('nav-dashboard').classList.add('on');
   document.getElementById('nav-progress').classList.remove('on');
 }
@@ -775,6 +774,7 @@ function showProgress(){
   document.querySelector('.two-col').style.display='none';
   document.getElementById('stats-row').style.display='none';
   document.getElementById('chart-section').style.display='none';
+  document.getElementById('simulator-section').style.display='none';
   document.getElementById('progress-page').classList.add('active');
   document.getElementById('nav-dashboard').classList.remove('on');
   document.getElementById('nav-progress').classList.add('on');
